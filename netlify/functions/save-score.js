@@ -1,4 +1,4 @@
-const { getStore } = require("@netlify/blobs");
+const { getStore, connectLambda } = require("@netlify/blobs");
 
 const STORE_NAME = "shark-run-leaderboard";
 const KEY = "scores";
@@ -7,6 +7,8 @@ const MAX_NAME_LEN = 12;
 const MAX_SCORE = 100000;
 
 exports.handler = async (event) => {
+  connectLambda(event);
+
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
@@ -50,3 +52,4 @@ exports.handler = async (event) => {
     };
   }
 };
+
