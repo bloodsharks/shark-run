@@ -215,7 +215,12 @@
     position:absolute; left:16px; bottom:max(14px, env(safe-area-inset-bottom));
     display:flex; align-items:center; gap:9px;
     text-decoration:none; cursor:pointer;
+    background:none; border:none; box-shadow:none;
+    padding:0; width:auto; margin:0; border-radius:0;
+    font-family:inherit; font-weight:normal; font-size:inherit; letter-spacing:normal;
+    color:inherit; transition:none;
   }
+  .ask-bot:active{ transform:none; }
   .ask-bot-icon{
     width:38px; height:38px; border-radius:50%; flex-shrink:0;
     background:rgba(14,13,22,0.75); border:1px solid var(--line);
@@ -245,6 +250,54 @@
     display:flex; align-items:center; justify-content:center;
   }
   .learn-more-dot img{ width:100%; height:100%; display:block; }
+
+  #bot-modal-backdrop{
+    position:fixed; inset:0; z-index:50;
+    background:rgba(5,5,9,0.72); backdrop-filter:blur(3px);
+    display:none; align-items:center; justify-content:center;
+    padding:20px;
+  }
+  #bot-modal-backdrop.open{ display:flex; }
+  #bot-modal{
+    width:100%; max-width:400px; height:min(640px, 82vh);
+    background:#0d0c14; border:1px solid var(--line); border-radius:16px;
+    box-shadow:0 0 0 1px rgba(140,0,255,0.1), 0 24px 70px rgba(0,0,0,0.65), 0 0 50px rgba(140,0,255,0.18);
+    display:flex; flex-direction:column; overflow:hidden;
+    transition:max-width .2s ease, height .2s ease, border-radius .2s ease;
+  }
+  #bot-modal-backdrop.expanded{ padding:0; }
+  #bot-modal-backdrop.expanded #bot-modal{
+    max-width:100%; width:100%; height:100%; border-radius:0;
+  }
+  #bot-modal-header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 16px; border-bottom:1px solid var(--line);
+    background:linear-gradient(90deg, rgba(140,0,255,0.12), rgba(80,162,240,0.08));
+    flex-shrink:0;
+  }
+  #bot-modal-title{
+    font-family:'Orbitron',sans-serif; font-size:11px; letter-spacing:2px;
+    color:#f2f0fb; text-shadow:0 0 10px rgba(140,0,255,0.5);
+  }
+  #bot-modal-controls{ display:flex; align-items:center; gap:8px; }
+  #bot-modal-controls button{
+    width:auto; margin:0; padding:0; background:none; border:none; box-shadow:none;
+    width:26px; height:26px; border-radius:7px;
+    display:flex; align-items:center; justify-content:center;
+    color:rgba(233,230,245,0.75); cursor:pointer;
+    border:1px solid rgba(140,0,255,0.25);
+    transition:background .12s ease, color .12s ease;
+  }
+  #bot-modal-controls button:active{ transform:scale(0.92); }
+  #bot-modal-controls button:hover{ background:rgba(140,0,255,0.15); color:#fff; }
+  #bot-modal-body{ flex:1; min-height:0; position:relative; background:#0a0b10; }
+  #bot-modal-iframe{ width:100%; height:100%; border:none; display:block; }
+  #bot-modal-fallback{
+    display:block; text-align:center; padding:8px; flex-shrink:0;
+    font-family:'Orbitron',sans-serif; font-size:9px; letter-spacing:1px;
+    color:rgba(233,230,245,0.45); text-decoration:none;
+    border-top:1px solid rgba(140,0,255,0.12);
+  }
 </style>
 </head>
 <body>
@@ -283,10 +336,10 @@
   <button class="icon-toggle" id="sound-toggle" aria-label="Toggle sound">
     <img id="sound-toggle-icon" alt="Sound">
   </button>
-  <a class="ask-bot" href="https://bloodsharks-bot.netlify.app/" target="_blank" rel="noopener noreferrer" aria-label="Ask the Blood Sharks bot">
+  <button class="ask-bot" id="btn-ask-bot" type="button" aria-label="Ask the Blood Sharks bot">
     <span class="ask-bot-icon"><img id="ask-bot-icon-img" alt="Bot"></span>
     <span class="ask-bot-label">ASK ME<br>EVERYTHING</span>
-  </a>
+  </button>
   <div class="powered-by">
     <span>POWERED BY</span>
     <img id="powered-by-logo" alt="Blood Sharks">
@@ -302,6 +355,26 @@
     <div class="diamond-divider"></div>
     <button id="btn-replay">PLAY AGAIN</button>
     <button id="btn-home" class="secondary">HOME</button>
+  </div>
+</div>
+
+<div id="bot-modal-backdrop">
+  <div id="bot-modal">
+    <div id="bot-modal-header">
+      <span id="bot-modal-title">BLOOD SHARKS BOT</span>
+      <div id="bot-modal-controls">
+        <button id="bot-modal-expand" type="button" aria-label="Expand">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        </button>
+        <button id="bot-modal-close" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+    </div>
+    <div id="bot-modal-body">
+      <iframe id="bot-modal-iframe" title="Blood Sharks Bot" src="about:blank"></iframe>
+    </div>
+    <a id="bot-modal-fallback" href="https://bloodsharks-bot.netlify.app/" target="_blank" rel="noopener noreferrer">Open in a new tab ↗</a>
   </div>
 </div>
 
@@ -406,6 +479,12 @@
   var poweredByLogo = document.getElementById('powered-by-logo');
   var askBotIconImg = document.getElementById('ask-bot-icon-img');
   var learnMoreIcon = document.getElementById('learn-more-icon');
+  var btnAskBot = document.getElementById('btn-ask-bot');
+  var botModalBackdrop = document.getElementById('bot-modal-backdrop');
+  var botModalIframe = document.getElementById('bot-modal-iframe');
+  var botModalExpand = document.getElementById('bot-modal-expand');
+  var botModalClose = document.getElementById('bot-modal-close');
+  var BOT_URL = 'https://bloodsharks-bot.netlify.app/';
   var soundToggleBtn = document.getElementById('sound-toggle');
   var soundToggleIcon = document.getElementById('sound-toggle-icon');
 
@@ -892,10 +971,21 @@
 
     if(game){
       var waterOffset = (game && game.running) ? game.groundOffset*0.6 : idleOffset*0.6;
-      var waterDrop = clamp(groundH*0.22, 14, 30);
+      var bgOffsetNow = (game && game.running) ? game.bgOffset : idleOffset*0.15;
+      var waterDrop = clamp(groundH*0.12, 8, 17);
       game.holes.forEach(function(h){
-        ctx.fillStyle = '#05060a';
-        ctx.fillRect(h.x, y, h.w, waterDrop);
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(h.x, y, h.w, waterDrop);
+        ctx.clip();
+        drawTiledRow(assets.background, 0, H, bgOffsetNow);
+        ctx.restore();
+
+        var gapGrad = ctx.createLinearGradient(0,y,0,y+waterDrop);
+        gapGrad.addColorStop(0,'rgba(0,0,0,0.12)');
+        gapGrad.addColorStop(1,'rgba(0,0,0,0.5)');
+        ctx.fillStyle = gapGrad;
+        ctx.fillRect(h.x,y,h.w,waterDrop);
 
         ctx.save();
         ctx.beginPath();
@@ -909,18 +999,18 @@
 
         var edgeW = Math.min(14, h.w*0.22);
         var lg = ctx.createLinearGradient(h.x,0,h.x+edgeW,0);
-        lg.addColorStop(0,'rgba(0,0,0,0.45)');
+        lg.addColorStop(0,'rgba(0,0,0,0.4)');
         lg.addColorStop(1,'rgba(0,0,0,0)');
         ctx.fillStyle = lg;
         ctx.fillRect(h.x,y,edgeW,groundH);
 
         var rg = ctx.createLinearGradient(h.x+h.w-edgeW,0,h.x+h.w,0);
         rg.addColorStop(0,'rgba(0,0,0,0)');
-        rg.addColorStop(1,'rgba(0,0,0,0.45)');
+        rg.addColorStop(1,'rgba(0,0,0,0.4)');
         ctx.fillStyle = rg;
         ctx.fillRect(h.x+h.w-edgeW,y,edgeW,groundH);
 
-        ctx.fillStyle = 'rgba(0,0,0,0.35)';
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
         ctx.fillRect(h.x, y, h.w, 3);
       });
     }
@@ -1037,6 +1127,29 @@
     renderLeaderboard();
     idleLastTs = 0;
     requestAnimationFrame(idleLoop);
+  });
+
+  function openBotModal(){
+    if(botModalIframe.src === 'about:blank' || !botModalIframe.src){
+      botModalIframe.src = BOT_URL;
+    }
+    botModalBackdrop.classList.add('open');
+  }
+  function closeBotModal(){
+    botModalBackdrop.classList.remove('open');
+    botModalBackdrop.classList.remove('expanded');
+    botModalIframe.src = 'about:blank';
+  }
+  btnAskBot.addEventListener('click', openBotModal);
+  botModalClose.addEventListener('click', closeBotModal);
+  botModalExpand.addEventListener('click', function(){
+    botModalBackdrop.classList.toggle('expanded');
+  });
+  botModalBackdrop.addEventListener('click', function(e){
+    if(e.target === botModalBackdrop){ closeBotModal(); }
+  });
+  window.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && botModalBackdrop.classList.contains('open')){ closeBotModal(); }
   });
 
   usernameInput.addEventListener('keydown', function(e){
