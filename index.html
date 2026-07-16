@@ -92,6 +92,7 @@
     text-align:center;
     margin:auto;
   }
+  #home-screen{ padding-bottom:92px; }
 
   @keyframes sharkGlow{
     0%,100%{ filter:drop-shadow(0 0 10px rgba(140,0,255,0.45)) drop-shadow(0 0 2px rgba(80,162,240,0.3)); }
@@ -120,6 +121,18 @@
     background:linear-gradient(135deg,var(--violet),var(--blue));
     transform:rotate(45deg);
     box-shadow:0 0 10px rgba(140,0,255,0.6);
+  }
+
+  @media (max-height:720px){
+    .logo-shark{ width:72px; margin-bottom:2px; }
+    h1.title{ font-size:24px; margin:2px 0 1px; }
+    .tagline{ margin:0 0 10px; }
+    .diamond-divider{ margin:8px auto; }
+    .panel{ padding:18px 24px 16px; }
+    #leaderboard-list{ max-height:140px; }
+    .leaderboard{ margin-top:14px; }
+    .learn-more{ margin-top:12px; padding:7px 14px; }
+    #home-screen{ padding-bottom:70px; }
   }
 
   input#username-input{
@@ -153,7 +166,7 @@
     font-family:'Orbitron',sans-serif; font-size:12px; letter-spacing:3px;
     color:rgba(233,230,245,0.6); text-align:center; margin:0 0 10px;
   }
-  #leaderboard-list{ list-style:none; margin:0; padding:0; }
+  #leaderboard-list{ list-style:none; margin:0; padding:0; max-height:185px; overflow-y:auto; }
   #leaderboard-list li{
     display:flex; align-items:center; gap:10px;
     padding:8px 10px; border-radius:8px; margin-bottom:6px;
@@ -504,7 +517,8 @@
   var JUMP_VELOCITY = -980;
   var DOUBLE_JUMP_VELOCITY = -820;
   var BASE_SPEED = 300;
-  var SPEED_ACCEL = 3.6;
+  var SPEED_ACCEL = 2.2;
+  var MAX_SPEED = 560;
   var MAX_DT = 0.05;
   var HAZARD_GAP_MIN = 540;
   var HAZARD_GAP_MAX = 840;
@@ -740,7 +754,7 @@
     if(game.phase === 'explode'){ return updateExploding(dt); }
 
     game.elapsed += dt;
-    game.speed = BASE_SPEED + game.elapsed*SPEED_ACCEL;
+    game.speed = Math.min(MAX_SPEED, BASE_SPEED + game.elapsed*SPEED_ACCEL);
     var travel = game.speed*dt;
     game.scrollDist += travel;
     game.bgOffset += travel*0.15;
@@ -995,10 +1009,13 @@
         ctx.clip();
         if(waveImg.complete && waveImg.naturalWidth){
           var phase = h.wavePhase || 0;
-          var scale = (waterH / waveImg.naturalHeight) * 1.4;
+          var scaleW = (h.w*1.5) / waveImg.naturalWidth;
+          var scaleH = (waterH*1.5) / waveImg.naturalHeight;
+          var scale = Math.max(scaleW, scaleH);
           var iw = waveImg.naturalWidth*scale, ih = waveImg.naturalHeight*scale;
-          var swayX = Math.sin(tNow*0.6 + phase) * Math.min(9, h.w*0.05);
-          var swayY = Math.sin(tNow*0.9 + phase*1.3) * 2.2;
+          var swayAmpX = Math.max(10, h.w*0.16);
+          var swayX = Math.sin(tNow*1.8 + phase) * swayAmpX;
+          var swayY = Math.sin(tNow*2.6 + phase*1.3) * 6;
           var cx = h.x + h.w/2 + swayX;
           var cy = waterY + waterH/2 + swayY;
           ctx.drawImage(waveImg, cx-iw/2, cy-ih/2, iw, ih);
@@ -1071,7 +1088,7 @@
     ctx.translate(cx,cy);
     ctx.rotate(p.tilt);
     ctx.shadowColor = 'rgba(140,0,255,0.55)';
-    ctx.shadowBlur = 10 + Math.sin(game.elapsed*2.2)*4;
+    ctx.shadowBlur = 8 + Math.sin(game.elapsed*2.2)*3;
     ctx.drawImage(img, -p.w/2, -p.h/2, p.w, p.h);
     ctx.shadowBlur = 0;
     ctx.restore();
