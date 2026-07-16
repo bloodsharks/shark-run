@@ -325,7 +325,7 @@
     <div id="hud-tip">TAP / DOUBLE TAP TO JUMP</div>
     <div id="hud-distance">0M</div>
   </div>
-  <div id="hud-version">v1.1</div>
+  <div id="hud-version">v1.6</div>
 </div>
 
 <div id="home-screen" class="screen active">
@@ -517,11 +517,14 @@
   var JUMP_VELOCITY = -980;
   var DOUBLE_JUMP_VELOCITY = -820;
   var BASE_SPEED = 300;
-  var SPEED_ACCEL = 2.2;
-  var MAX_SPEED = 560;
+  var SPEED_ACCEL = 2.3;
+  var MAX_SPEED = 640;
   var MAX_DT = 0.05;
+  var DIFFICULTY_RAMP_TIME = 75;
   var HAZARD_GAP_MIN = 540;
   var HAZARD_GAP_MAX = 840;
+  var HAZARD_GAP_MIN_LATE = 360;
+  var HAZARD_GAP_MAX_LATE = 560;
   var HOLE_CHANCE = 0.3;
   var RUBY_GAP_MIN = 260;
   var RUBY_GAP_MAX = 480;
@@ -589,6 +592,13 @@
 
   function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
   function rand(a,b){ return a + Math.random()*(b-a); }
+  function hazardGapRange(elapsed){
+    var t = clamp((elapsed||0)/DIFFICULTY_RAMP_TIME, 0, 1);
+    return {
+      min: HAZARD_GAP_MIN + (HAZARD_GAP_MIN_LATE-HAZARD_GAP_MIN)*t,
+      max: HAZARD_GAP_MAX + (HAZARD_GAP_MAX_LATE-HAZARD_GAP_MAX)*t
+    };
+  }
 
   function resize(){
     DPR = Math.min(window.devicePixelRatio || 1, 2);
@@ -774,7 +784,8 @@
 
     if(game.scrollDist >= game.nextHazardDist){
       spawnHazard();
-      game.nextHazardDist = game.scrollDist + rand(HAZARD_GAP_MIN, HAZARD_GAP_MAX);
+      var hg = hazardGapRange(game.elapsed);
+      game.nextHazardDist = game.scrollDist + rand(hg.min, hg.max);
     }
     if(game.scrollDist >= game.nextRubyDist){
       spawnRuby();
@@ -985,7 +996,7 @@
 
     if(game){
       var bgOffsetNow = (game && game.running) ? game.bgOffset : idleOffset*0.15;
-      var waterDrop = clamp(groundH*0.12, 8, 17);
+      var waterDrop = clamp(groundH*0.2, 16, 32);
       var tNow = game.elapsed || 0;
       var waveImg = assets.wave;
       game.holes.forEach(function(h){
@@ -997,8 +1008,9 @@
         ctx.restore();
 
         var gapGrad = ctx.createLinearGradient(0,y,0,y+waterDrop);
-        gapGrad.addColorStop(0,'rgba(0,0,0,0.12)');
-        gapGrad.addColorStop(1,'rgba(0,0,0,0.5)');
+        gapGrad.addColorStop(0,'rgba(0,0,0,0.08)');
+        gapGrad.addColorStop(0.55,'rgba(0,0,0,0.32)');
+        gapGrad.addColorStop(1,'rgba(0,0,0,0.62)');
         ctx.fillStyle = gapGrad;
         ctx.fillRect(h.x,y,h.w,waterDrop);
 
