@@ -1015,8 +1015,17 @@
     if(game){
       var tNow = game.elapsed || 0;
       var waveImg = assets.wave;
+      var bgOffsetNow = (game && game.running) ? game.bgOffset : idleOffset*0.15;
+      var waterDrop = clamp(groundH*0.15, 12, 22);
       game.holes.forEach(function(h){
-        var waterY = y, waterH = groundH;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(h.x, y, h.w, waterDrop);
+        ctx.clip();
+        drawTiledRow(assets.background, 0, H, bgOffsetNow);
+        ctx.restore();
+
+        var waterY = y+waterDrop, waterH = groundH-waterDrop;
         ctx.save();
         ctx.beginPath();
         ctx.rect(h.x, waterY, h.w, waterH);
@@ -1037,20 +1046,20 @@
           ctx.fillStyle = '#0d3a52';
           ctx.fillRect(h.x, waterY, h.w, waterH);
         }
-        ctx.restore();
 
         var edgeW = Math.min(14, h.w*0.22);
         var lg = ctx.createLinearGradient(h.x,0,h.x+edgeW,0);
         lg.addColorStop(0,'rgba(0,0,0,0.4)');
         lg.addColorStop(1,'rgba(0,0,0,0)');
         ctx.fillStyle = lg;
-        ctx.fillRect(h.x,y,edgeW,groundH);
+        ctx.fillRect(h.x,waterY,edgeW,waterH);
 
         var rg = ctx.createLinearGradient(h.x+h.w-edgeW,0,h.x+h.w,0);
         rg.addColorStop(0,'rgba(0,0,0,0)');
         rg.addColorStop(1,'rgba(0,0,0,0.4)');
         ctx.fillStyle = rg;
-        ctx.fillRect(h.x+h.w-edgeW,y,edgeW,groundH);
+        ctx.fillRect(h.x+h.w-edgeW,waterY,edgeW,waterH);
+        ctx.restore();
       });
     }
     ctx.restore();
