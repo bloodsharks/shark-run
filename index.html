@@ -601,7 +601,10 @@
   }
 
   function resize(){
-    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    var dprCap = 2;
+    if(window.innerWidth > 1600){ dprCap = 1.25; }
+    else if(window.innerWidth > 1000){ dprCap = 1.5; }
+    DPR = Math.min(window.devicePixelRatio || 1, dprCap);
     W = window.innerWidth;
     H = window.innerHeight;
     canvas.width = Math.round(W*DPR);
@@ -944,27 +947,42 @@
     }
   }
 
+  var tilePatternCache = {};
+  function getMirroredPattern(img, targetH){
+    if(!img.complete || !img.naturalWidth) return null;
+    var roundedH = Math.round(targetH);
+    var key = img.src.length + '_' + roundedH;
+    var cached = tilePatternCache[key];
+    if(cached) return cached;
+    var scale = roundedH / img.naturalHeight;
+    var tileW = Math.max(1, Math.round(img.naturalWidth * scale));
+    var off = document.createElement('canvas');
+    off.width = tileW*2;
+    off.height = roundedH;
+    var octx = off.getContext('2d');
+    octx.drawImage(img, 0, 0, tileW, roundedH);
+    octx.save();
+    octx.translate(tileW*2, 0);
+    octx.scale(-1,1);
+    octx.drawImage(img, 0, 0, tileW, roundedH);
+    octx.restore();
+    var pattern = ctx.createPattern(off, 'repeat');
+    var entry = { pattern: pattern, tileW: tileW*2 };
+    tilePatternCache[key] = entry;
+    return entry;
+  }
+
   function drawTiledRow(img, y, h, offset){
-    if(!img.complete || !img.naturalWidth) return;
-    var scale = h / img.naturalHeight;
-    var tileW = img.naturalWidth * scale;
-    if(tileW <= 0) return;
-    var startX = -(offset % tileW) - tileW;
-    var startIndex = Math.round((startX + offset) / tileW);
-    var idx = startIndex;
-    for(var x = startX; x < W + tileW; x += tileW){
-      var flip = (((idx % 2) + 2) % 2) === 1;
-      ctx.save();
-      if(flip){
-        ctx.translate(x + tileW, y);
-        ctx.scale(-1,1);
-        ctx.drawImage(img, 0, 0, tileW, h);
-      } else {
-        ctx.drawImage(img, x, y, tileW, h);
-      }
-      ctx.restore();
-      idx++;
-    }
+    var entry = getMirroredPattern(img, h);
+    if(!entry) return;
+    var patW = entry.tileW;
+    var shift = ((offset % patW) + patW) % patW;
+    ctx.save();
+    ctx.translate(0, y);
+    ctx.translate(-shift, 0);
+    ctx.fillStyle = entry.pattern;
+    ctx.fillRect(-patW, 0, W + patW*2, h);
+    ctx.restore();
   }
 
   function drawBackground(){
@@ -995,18 +1013,10 @@
     }
 
     if(game){
-      var waterDrop = clamp(groundH*0.2, 16, 32);
       var tNow = game.elapsed || 0;
       var waveImg = assets.wave;
       game.holes.forEach(function(h){
-        var gapGrad = ctx.createLinearGradient(0,y,0,y+waterDrop);
-        gapGrad.addColorStop(0,'rgba(0,0,0,0.18)');
-        gapGrad.addColorStop(0.55,'rgba(0,0,0,0.4)');
-        gapGrad.addColorStop(1,'rgba(0,0,0,0.68)');
-        ctx.fillStyle = gapGrad;
-        ctx.fillRect(h.x,y,h.w,waterDrop);
-
-        var waterY = y+waterDrop, waterH = groundH-waterDrop;
+        var waterY = y, waterH = groundH;
         ctx.save();
         ctx.beginPath();
         ctx.rect(h.x, waterY, h.w, waterH);
@@ -1029,9 +1039,6 @@
         }
         ctx.restore();
 
-        ctx.fillStyle = 'rgba(255,255,255,0.16)';
-        ctx.fillRect(h.x, waterY, h.w, 2);
-
         var edgeW = Math.min(14, h.w*0.22);
         var lg = ctx.createLinearGradient(h.x,0,h.x+edgeW,0);
         lg.addColorStop(0,'rgba(0,0,0,0.4)');
@@ -1051,8 +1058,13 @@
     ctx.strokeStyle = 'rgba(0,0,0,0.3)';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(0,y);
-    ctx.lineTo(W,y);
+    var sortedHoles = game ? game.holes.slice().sort(function(a,b){ return a.x-b.x; }) : [];
+    var cursor = 0;
+    sortedHoles.forEach(function(h){
+      if(h.x > cursor){ ctx.moveTo(cursor,y); ctx.lineTo(h.x,y); }
+      cursor = Math.max(cursor, h.x+h.w);
+    });
+    if(cursor < W){ ctx.moveTo(cursor,y); ctx.lineTo(W,y); }
     ctx.stroke();
   }
 
@@ -1092,7 +1104,7 @@
     ctx.translate(cx,cy);
     ctx.rotate(p.tilt);
     ctx.shadowColor = 'rgba(140,0,255,0.55)';
-    ctx.shadowBlur = 8 + Math.sin(game.elapsed*2.2)*3;
+    ctx.shadowBlur = 6 + Math.sin(game.elapsed*2.2)*2;
     ctx.drawImage(img, -p.w/2, -p.h/2, p.w, p.h);
     ctx.shadowBlur = 0;
     ctx.restore();
