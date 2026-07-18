@@ -601,10 +601,7 @@
   }
 
   function resize(){
-    var dprCap = 2;
-    if(window.innerWidth > 1600){ dprCap = 1.25; }
-    else if(window.innerWidth > 1000){ dprCap = 1.5; }
-    DPR = Math.min(window.devicePixelRatio || 1, dprCap);
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
     W = window.innerWidth;
     H = window.innerHeight;
     canvas.width = Math.round(W*DPR);
@@ -1002,13 +999,10 @@
       var tNow = game.elapsed || 0;
       var waveImg = assets.wave;
       game.holes.forEach(function(h){
-        ctx.fillStyle = '#07080d';
-        ctx.fillRect(h.x, y, h.w, waterDrop);
-
         var gapGrad = ctx.createLinearGradient(0,y,0,y+waterDrop);
-        gapGrad.addColorStop(0,'rgba(35,28,48,0.85)');
-        gapGrad.addColorStop(0.55,'rgba(10,8,16,0.9)');
-        gapGrad.addColorStop(1,'rgba(0,0,0,0.95)');
+        gapGrad.addColorStop(0,'rgba(0,0,0,0.18)');
+        gapGrad.addColorStop(0.55,'rgba(0,0,0,0.4)');
+        gapGrad.addColorStop(1,'rgba(0,0,0,0.68)');
         ctx.fillStyle = gapGrad;
         ctx.fillRect(h.x,y,h.w,waterDrop);
 
@@ -1057,13 +1051,8 @@
     ctx.strokeStyle = 'rgba(0,0,0,0.3)';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    var sortedHoles = game ? game.holes.slice().sort(function(a,b){ return a.x-b.x; }) : [];
-    var cursor = 0;
-    sortedHoles.forEach(function(h){
-      if(h.x > cursor){ ctx.moveTo(cursor,y); ctx.lineTo(h.x,y); }
-      cursor = Math.max(cursor, h.x+h.w);
-    });
-    if(cursor < W){ ctx.moveTo(cursor,y); ctx.lineTo(W,y); }
+    ctx.moveTo(0,y);
+    ctx.lineTo(W,y);
     ctx.stroke();
   }
 
