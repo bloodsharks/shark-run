@@ -995,22 +995,14 @@
     }
 
     if(game){
-      var bgOffsetNow = (game && game.running) ? game.bgOffset : idleOffset*0.15;
       var waterDrop = clamp(groundH*0.2, 16, 32);
       var tNow = game.elapsed || 0;
       var waveImg = assets.wave;
       game.holes.forEach(function(h){
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(h.x, y, h.w, waterDrop);
-        ctx.clip();
-        drawTiledRow(assets.background, 0, H, bgOffsetNow);
-        ctx.restore();
-
         var gapGrad = ctx.createLinearGradient(0,y,0,y+waterDrop);
-        gapGrad.addColorStop(0,'rgba(0,0,0,0.08)');
-        gapGrad.addColorStop(0.55,'rgba(0,0,0,0.32)');
-        gapGrad.addColorStop(1,'rgba(0,0,0,0.62)');
+        gapGrad.addColorStop(0,'rgba(0,0,0,0.18)');
+        gapGrad.addColorStop(0.55,'rgba(0,0,0,0.4)');
+        gapGrad.addColorStop(1,'rgba(0,0,0,0.68)');
         ctx.fillStyle = gapGrad;
         ctx.fillRect(h.x,y,h.w,waterDrop);
 
